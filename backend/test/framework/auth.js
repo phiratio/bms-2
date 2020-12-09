@@ -24,6 +24,7 @@ const getCurrentUserCredentials = async (jwt) => {
     .set("Authorization", `Bearer ${jwt}`);
 
   return {
+    statusCode: res.statusCode,
     id: res.body.id,
     username: res.body.username,
     email: res.body.email,

@@ -19,7 +19,7 @@ describe("server initialization", () => {
     expect(strapi).toBeDefined();
   });
 
-  it("should return 200 for API root path", async () => {
+  it("should return 200 for API's root path", async () => {
     const rootRequest = await getRootPath();
     expect(rootRequest.statusCode).toBe(200);
     expect(rootRequest.body).toEqual({});
