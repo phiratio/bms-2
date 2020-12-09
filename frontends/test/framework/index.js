@@ -73,6 +73,43 @@ const loginPage = async (driver, location) => {
   };
 };
 
+const registrationPage = (driver) => {
+  return {
+    checkInitialElements: async () => {
+      const registrationForm = await getElementsById(
+        driver,
+        'registrationForm',
+      );
+      const submitSelectEmployees = await registrationForm[0].findElements(
+        By.id('submitSelectEmployees'),
+      );
+      const firstNameInput = await registrationForm[0].findElements(
+        By.id('registrationFormFirstName'),
+      );
+      const lastNameInput = await registrationForm[0].findElements(
+        By.id('registrationFormLastName'),
+      );
+      return {
+        hasRegistrationForm: registrationForm.length === 1,
+        hasFirstNameInput: firstNameInput.length === 1,
+        hasLastNameInput: lastNameInput.length === 1,
+        hasSubmitButtonToSelectEmployees: submitSelectEmployees.length === 1,
+      };
+    },
+    setFirstName: async (newValue) =>
+      setInputValueByName(driver, 'firstName', newValue),
+    getFirstName: async () => getInputValueByName(driver, 'firstName'),
+    setLastName: async (newValue) =>
+      setInputValueByName(driver, 'lastName', newValue),
+    getLastName: async () => getInputValueByName(driver, 'lastName'),
+    clickSubmitSelectEmployees: async () => {
+      const nextButton = await getElementById(driver, 'submitSelectEmployees');
+      await nextButton.click();
+      await driver.manage().setTimeouts({ implicit: 3000 });
+    },
+  };
+};
+
 const profilePage = async (driver) => {
   const profileContainer = await getElementsById(driver, 'profileContainer');
   const profileForm = await getElementsById(driver, 'profileForm');
@@ -186,4 +223,5 @@ module.exports = {
   login,
   loginPage,
   profilePage,
+  registrationPage,
 };
