@@ -48,16 +48,25 @@ describe("authentication flow", () => {
     done();
   });
 
-  it("should return user's  data for authenticated user", async (done) => {
+  it("should return user's data for authenticated user", async (done) => {
     const user = await createUser(mockUser);
-    const jwt = issueJwt(user.id);
+    const jwt = await issueJwt(user.id);
     const currentUser = await getCurrentUserCredentials(jwt);
 
     expect(currentUser).toEqual({
+      statusCode: 200,
       id: user.id,
       username: user.username,
       email: user.email,
     });
+    done();
+  });
+
+  it("should return `401 Unauthorized` when requesting user credentials without jwt", async (done) => {
+    await createUser(mockUser);
+    const currentUser = await getCurrentUserCredentials();
+
+    expect(currentUser.statusCode).toBe(401);
     done();
   });
 });
