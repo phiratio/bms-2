@@ -40,7 +40,7 @@ class Registration extends React.Component {
     this.setEmployees = setEmployees.bind(this);
   }
 
-  setStep = async step => {
+  setStep = async (step) => {
     if (this.state.steps.current === 'employees') {
       this.setState({ selectedEmployees: [] });
     }
@@ -73,7 +73,7 @@ class Registration extends React.Component {
     });
   };
 
-  skipStep = step => {
+  skipStep = (step) => {
     this.setState({
       steps: {
         ...this.state.steps,
@@ -84,7 +84,7 @@ class Registration extends React.Component {
     });
   };
 
-  unSkipStep = step => {
+  unSkipStep = (step) => {
     this.setState({
       ...this.state.steps,
       skip: [],
@@ -99,9 +99,9 @@ class Registration extends React.Component {
     if (currentStepIndex > -1) this.setStep(list[nextStepIndex]);
   };
 
-  submitRegistration = values =>
+  submitRegistration = (values) =>
     this.context.httpClient
-      .sendData(`/waitingLists/`, 'POST', {
+      .sendData('/waitingLists/', 'POST', {
         firstName: values.firstName,
         lastName: values.lastName,
         ...(this.state.steps.skip.length > 0 && {
@@ -113,7 +113,7 @@ class Registration extends React.Component {
         }),
       })
       .then(validate.bind(this))
-      .then(data => {
+      .then((data) => {
         if (data === undefined)
           return this.context.showNotification('Response is empty', 'error');
         this.setState({
@@ -132,19 +132,20 @@ class Registration extends React.Component {
           });
         }, 3000);
       })
-      .catch(e => {
+      .catch((e) => {
         if (e instanceof TypeError) {
           this.context.showNotification(e.message, 'error');
         }
-        const message = e.message || {};
+
+        const data = e.data || {};
         const currentStep = this.state.steps.current;
         this.setState({
           steps: {
             ...this.state.steps,
             previous: currentStep,
-            current: message.nextStep ? message.nextStep : currentStep,
-            ...(message.hasEmail && { skip: ['email'] }),
-            ...(message.hasEmail && { hasEmail: true }),
+            current: data.nextStep ? data.nextStep : currentStep,
+            ...(data.hasEmail && { skip: ['email'] }),
+            ...(data.hasEmail && { hasEmail: true }),
           },
         });
         if (this.state.steps.passed.indexOf(currentStep) === -1) {
@@ -155,18 +156,18 @@ class Registration extends React.Component {
             },
           });
         }
-        if (message.nextStep) {
-          this.setStep(message.nextStep);
+        if (data.nextStep) {
+          this.setStep(data.nextStep);
         }
 
-        if (message.listOfEmployees) {
-          this.setEmployees(message.listOfEmployees);
+        if (data.listOfEmployees) {
+          this.setEmployees(data.listOfEmployees);
         }
-        if (message.preferredEmployees) {
+        if (data.preferredEmployees) {
           this.setState({
-            selectedEmployees: message.preferredEmployees
-              .filter(el => el.name !== 'Anyone')
-              .map(el => el.name),
+            selectedEmployees: data.preferredEmployees
+              .filter((el) => el.name !== 'Anyone')
+              .map((el) => el.name),
           });
         }
 
@@ -196,11 +197,11 @@ class Registration extends React.Component {
         }
       });
 
-  onEmployeeClick = employee => {
+  onEmployeeClick = (employee) => {
     const { selectedEmployees } = this.state;
     let modifiedEmployees = [];
     if (selectedEmployees.indexOf(employee) > -1) {
-      modifiedEmployees = selectedEmployees.filter(el => el !== employee);
+      modifiedEmployees = selectedEmployees.filter((el) => el !== employee);
     } else {
       modifiedEmployees = [...selectedEmployees, employee];
     }
@@ -210,7 +211,7 @@ class Registration extends React.Component {
     });
   };
 
-  setRegistrationConfig = data => {
+  setRegistrationConfig = (data) => {
     this.setState({ ...data });
   };
 
@@ -252,7 +253,9 @@ class Registration extends React.Component {
                     <Col>
                       <RegistrationForm
                         selectedEmployees={this.state.selectedEmployees}
-                        listOfEnabledEmployees={this.state.listOfEnabledEmployees}
+                        listOfEnabledEmployees={
+                          this.state.listOfEnabledEmployees
+                        }
                         initialValues={this.state.initialRegistrationValues}
                         disabled={this.state.disabled}
                         steps={this.state.steps}

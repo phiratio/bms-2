@@ -1,111 +1,126 @@
-'use strict';
-const { DAY_1, DAY_7, HOUR_1, HOUR_12, GROUP_NAME_ADMINISTRATOR } = require('../../constants');
-const _ = require('lodash');
-const objectId = require('bson-objectid');
-const User = require('../classes/User');
-const { sanitizedUserEntry } = require('../../../api/utils/services/utils');
+"use strict";
+const {
+  DAY_1,
+  DAY_7,
+  HOUR_1,
+  HOUR_12,
+  GROUP_NAME_ADMINISTRATOR,
+} = require("../../constants");
+const _ = require("lodash");
+const objectId = require("bson-objectid");
+const User = require("../classes/User");
+const { sanitizedUserEntry } = require("../../../api/utils/services/utils");
 /**
  *  Accounts.js controller
  *  Retrieves users from user-permission plugin
  */
 module.exports = {
-  getEmployees: async ctx => {
+  getEmployees: async (ctx) => {
     ctx.params = {
-      role: 'employees',
+      role: "employees",
     };
-    return strapi.controllers.accounts.find(ctx)
+    return strapi.controllers.accounts.find(ctx);
   },
-  getClients: async ctx => {
+  getClients: async (ctx) => {
     ctx.params = {
-      role: 'clients',
+      role: "clients",
     };
-    return strapi.controllers.accounts.find(ctx)
+    return strapi.controllers.accounts.find(ctx);
   },
   /**
    * Retrieve a list of users
    * @param ctx Koa object
    * @returns { Promise }
    */
-  find: async ctx => {
-    return strapi
-      .services
-      .joi
+  find: async (ctx) => {
+    return strapi.services.joi
       .validate(ctx.query)
-      .number('page', { optional: true, positive: true })
-      .number('limit', { optional: true, positive: true, max: 100 })
-      .string('search', { optional: true, sanitize: false, regex: /^(?!-)(?!.*--)[A-Za-z0-9 -.@]+(?<!-)$/ })
+      .number("page", { optional: true, positive: true })
+      .number("limit", { optional: true, positive: true, max: 100 })
+      .string("search", {
+        optional: true,
+        sanitize: false,
+        regex: /^(?!-)(?!.*--)[A-Za-z0-9 -.@]+(?<!-)$/,
+      })
       .result()
-      .then(async values => {
-        const roleName = _.get(ctx.params, 'role');
+      .then(async (values) => {
+        const roleName = _.get(ctx.params, "role");
 
         let roleId;
-        if (roleName === 'employees') {
+        if (roleName === "employees") {
           const employeeRoles = await strapi.services.accounts.getEmployeeRoles();
-          roleId = _.map(employeeRoles, el => el.id);
-
+          roleId = _.map(employeeRoles, (el) => el.id);
         } else {
-          roleId = _.get(await strapi.services.accounts.getRoleByType(roleName), 'id');
-
+          roleId = _.get(
+            await strapi.services.accounts.getRoleByType(roleName),
+            "id"
+          );
         }
 
         let search;
-        if (values.search ) {
+        if (values.search) {
           const matchPhoneNumber = values.search.match(/^[0-9 ]*$/);
-          const matchInternationalPhoneNumber = values.search.match(/^[+0-9 ]*$/);
-          if (values.search.indexOf(' ') > -1 && !matchPhoneNumber && !matchInternationalPhoneNumber) {
+          const matchInternationalPhoneNumber = values.search.match(
+            /^[+0-9 ]*$/
+          );
+          if (
+            values.search.indexOf(" ") > -1 &&
+            !matchPhoneNumber &&
+            !matchInternationalPhoneNumber
+          ) {
             // We assume that if provided search query has spaces we have to treat it as a Full Name
             const fullName = values.search.match(/^(\S+)\s(.*)/);
             search = {
-              $and:
-                [
-                  { firstName:{$regex: fullName[1], $options: 'i'} },
-                  { lastName:{$regex: fullName[2] || '', $options: 'i'} }
-                ],
+              $and: [
+                { firstName: { $regex: fullName[1], $options: "i" } },
+                { lastName: { $regex: fullName[2] || "", $options: "i" } },
+              ],
             };
           } else if (matchPhoneNumber || matchInternationalPhoneNumber) {
             search = {
-              $or:
-                [
-                  { mobilePhone:{$regex: values.search.replace(/[\n\r\s\t]+/g, ''), $options: 'i'}},
-                ],
+              $or: [
+                {
+                  mobilePhone: {
+                    $regex: values.search.replace(/[\n\r\s\t]+/g, ""),
+                    $options: "i",
+                  },
+                },
+              ],
             };
           } else {
             search = {
-              $or:
-                [
-                  { firstName: {$regex: values.search, $options: 'i'} },
-                  { lastName: {$regex: values.search, $options: 'i'} },
-                  { email: {$regex: values.search, $options: 'i'} },
-                  { username: {$regex: values.search, $options: 'i'} },
-                ],
+              $or: [
+                { firstName: { $regex: values.search, $options: "i" } },
+                { lastName: { $regex: values.search, $options: "i" } },
+                { email: { $regex: values.search, $options: "i" } },
+                { username: { $regex: values.search, $options: "i" } },
+              ],
             };
           }
         }
 
-
         if (roleId) {
-          const or = _.get(search, '$or', );
+          const or = _.get(search, "$or");
           search = {
-            ...or && {$or: or},
-            $and: [
-              { role: roleId }
-            ]
-          }
+            ...(or && { $or: or }),
+            $and: [{ role: roleId }],
+          };
         }
 
-        const pageSize = values.limit || await strapi.services.config.get('accounts').key('pageSize');
-        const paginationLinks = await strapi.services.config.get('accounts').key('paginationLinks');
+        const pageSize =
+          values.limit ||
+          (await strapi.services.config.get("accounts").key("pageSize"));
+        const paginationLinks = await strapi.services.config
+          .get("accounts")
+          .key("paginationLinks");
         const currentPage = values.page || 1;
         const totalRecords = await strapi.services.accounts.count(search);
         const totalPages = Math.ceil(totalRecords / pageSize);
-        const users = await strapi
-          .services
-          .accounts
-          .fetchAll({
-            skip: pageSize *  currentPage - pageSize,
-            limit: pageSize,
-            ...{ query: search }
-          });
+        const users = await strapi.services.accounts.fetchAll({
+          skip: pageSize * currentPage - pageSize,
+          limit: pageSize,
+          ...{ query: search },
+        });
 
         return ctx.send({
           users,
@@ -114,15 +129,15 @@ module.exports = {
             currentPage,
             pageSize,
             totalRecords,
-            paginationLinks
+            paginationLinks,
           },
         });
-      }).catch(e => {
-        if (e.message) strapi.log.error('accounts.find Error: %s', e.message);
+      })
+      .catch((e) => {
+        if (e.message) strapi.log.error("accounts.find Error: %s", e.message);
         if (e instanceof TypeError) return ctx.badRequest(null, e.message);
         return ctx.badRequest(null, e);
       });
-
   },
 
   /**
@@ -131,16 +146,17 @@ module.exports = {
    * @returns {Promise}
    */
 
-  findOne: async ctx => {
-    return strapi
-      .services
-      .joi
+  findOne: async (ctx) => {
+    return strapi.services.joi
       .validate(ctx.params)
-      .objectId('id')
+      .objectId("id")
       .result()
-      .then(async values => strapi.services.accounts.fetch({ _id: values.id }))
+      .then(async (values) =>
+        strapi.services.accounts.fetch({ _id: values.id })
+      )
       .catch((e) => {
-        if (e.message) strapi.log.error('accounts.findOne Error: %s', e.message);
+        if (e.message)
+          strapi.log.error("accounts.findOne Error: %s", e.message);
         if (e instanceof TypeError) return ctx.badRequest(null, e.message);
         return ctx.badRequest(null, e);
       });
@@ -158,7 +174,7 @@ module.exports = {
         from_1hour_to_12hour: strapi.services.time.generate.from_1hour_to_12hour_array(),
         from_1day_to_7day: strapi.services.time.generate.from_1day_to_7day(),
       },
-      roles: roles.map(el => ({ id: el.id, name: el.name, })),
+      roles: roles.map((el) => ({ id: el.id, name: el.name })),
       items,
     };
   },
@@ -168,60 +184,92 @@ module.exports = {
    * @param ctx
    * @returns {Promise}
    */
-  create: async ctx => {
-    return strapi
-      .services
-      .joi
+  create: async (ctx) => {
+    return strapi.services.joi
       .validate(ctx.request.body)
-      .boolean('blocked', { optional: true })
-      .boolean('autoConfirmAppointments', { optional: true })
-      .boolean('confirmed', { optional: true })
-      .boolean('customAppointmentsHours', { optional: true })
-      .boolean('acceptAppointments', { optional: true })
-      .dateRange('vacationDates', { allowMultipleDates: true })
-      .boolean('enableSchedule', { optional: true })
-      .string('firstName', { label: 'First Name', startCase: true })
-      .string('lastName', { label: 'Last Name', startCase: true })
-      .string('description', { label: 'Description', max: 250, optional: true, allowEmpty: true })
-      .email( { optional: true, unique: true, mxValidation: true, checkBlacklists: true })
-      .mobilePhone('mobilePhone', { optional: true, unique: true })
+      .boolean("blocked", { optional: true })
+      .boolean("autoConfirmAppointments", { optional: true })
+      .boolean("confirmed", { optional: true })
+      .boolean("customAppointmentsHours", { optional: true })
+      .boolean("acceptAppointments", { optional: true })
+      .dateRange("vacationDates", { allowMultipleDates: true })
+      .boolean("enableSchedule", { optional: true })
+      .string("firstName", { label: "First Name", startCase: true })
+      .string("lastName", { label: "Last Name", startCase: true })
+      .string("description", {
+        label: "Description",
+        max: 250,
+        optional: true,
+        allowEmpty: true,
+      })
+      .email({
+        optional: true,
+        unique: true,
+        mxValidation: true,
+        checkBlacklists: true,
+      })
+      .mobilePhone("mobilePhone", { optional: true, unique: true })
       .role()
-      .username( { optional: true })
-      .schedule('customAppointmentsSchedule', { allowNull: true, optional: true })
-      .schedule('schedule', { allowNull: true, optional: true })
+      .username({ optional: true })
+      .schedule("customAppointmentsSchedule", {
+        allowNull: true,
+        optional: true,
+      })
+      .schedule("schedule", { allowNull: true, optional: true })
       .password({ optional: true })
-      .validateTimeObject('futureBooking', { from: DAY_1, to: DAY_7, step: DAY_1, optional: true })
-      .validateTimeObject('priorTimeBooking', { from: HOUR_1, to: HOUR_12, step: HOUR_1, optional: true })
+      .validateTimeObject("futureBooking", {
+        from: DAY_1,
+        to: DAY_7,
+        step: DAY_1,
+        optional: true,
+      })
+      .validateTimeObject("priorTimeBooking", {
+        from: HOUR_1,
+        to: HOUR_12,
+        step: HOUR_1,
+        optional: true,
+      })
       .result()
-      .then(async values => {
+      .then(async (values) => {
         const role = await strapi.services.accounts.getRole(values.role);
         const errors = {};
         if (role.name === GROUP_NAME_ADMINISTRATOR && !values.email) {
-          errors.email = { msg: 'Accounts in Administator group should have emails', param: 'email' };
+          errors.email = {
+            msg: "Accounts in Administator group should have emails",
+            param: "email",
+          };
         }
 
-        if (await strapi.services.accounts.isEmployeeRole(role.name) && !values.username) {
-          errors.username = { msg: `Accounts in ${_.startCase(role.name)} group should have usernames`, param: 'username' };
+        if (
+          (await strapi.services.accounts.isEmployeeRole(role.name)) &&
+          !values.username
+        ) {
+          errors.username = {
+            msg: `Accounts in ${_.startCase(
+              role.name
+            )} group should have usernames`,
+            param: "username",
+          };
         }
 
         if (Object.keys(errors).length > 0) {
           return ctx.badRequest(null, { errors });
         }
         values.createdAt = Date.now();
-        return strapi
-          .plugins['users-permissions']
-          .services
-          .user
+        return strapi.plugins["users-permissions"].services.user
           .add(values)
-          .then(async user => {
-            strapi.services.eventemitter.emit('accounts.create', { ...user, role: {...role._doc} });
+          .then(async (user) => {
+            strapi.services.eventemitter.emit("accounts.create", {
+              ...user,
+              role: { ...role._doc },
+            });
             return {
-              data: user
+              data: user,
             };
           });
       })
-      .catch(e => {
-        if (e.message) strapi.log.error('accounts.create Error: %s', e.message);
+      .catch((e) => {
+        if (e.message) strapi.log.error("accounts.create Error: %s", e.message);
         if (e instanceof TypeError) return ctx.badRequest(null, e.message);
         return ctx.badRequest(null, e);
       });
@@ -232,71 +280,116 @@ module.exports = {
    * @param ctx
    * @returns {Promise}
    */
-  update: async ctx => {
-    return strapi
-      .services
-      .joi
-      .validate({...ctx.params, ...ctx.request.body})
-      .objectId('id')
-      .boolean('blocked', { optional: true })
-      .boolean('autoConfirmAppointments', { optional: true })
-      .boolean('acceptAppointments', { optional: true })
-      .boolean('confirmed', { optional: true })
-      .boolean('enableSchedule', { optional: true })
-      .boolean('customAppointmentsHours', { optional: true })
-      .dateRange('vacationDates', { allowMultipleDates: true, allowNull: true })
+  update: async (ctx) => {
+    return strapi.services.joi
+      .validate({ ...ctx.params, ...ctx.request.body })
+      .objectId("id")
+      .boolean("blocked", { optional: true })
+      .boolean("autoConfirmAppointments", { optional: true })
+      .boolean("acceptAppointments", { optional: true })
+      .boolean("confirmed", { optional: true })
+      .boolean("enableSchedule", { optional: true })
+      .boolean("customAppointmentsHours", { optional: true })
+      .dateRange("vacationDates", { allowMultipleDates: true, allowNull: true })
       .items({ optional: true })
-      .string('firstName', { label: 'First Name' })
-      .string('lastName', { label: 'Last Name' })
-      .string('description', { label: 'Description', max: 250, optional: true, allowEmpty: true })
-      .email( { optional: true, update: true, unique: true, mxValidation: true, checkBlacklists: true  })
-      .mobilePhone('mobilePhone', { update: true, optional: true, unique: true })
+      .string("firstName", { label: "First Name" })
+      .string("lastName", { label: "Last Name" })
+      .string("description", {
+        label: "Description",
+        max: 250,
+        optional: true,
+        allowEmpty: true,
+      })
+      .email({
+        optional: true,
+        update: true,
+        unique: true,
+        mxValidation: true,
+        checkBlacklists: true,
+      })
+      .mobilePhone("mobilePhone", {
+        update: true,
+        optional: true,
+        unique: true,
+      })
       .role()
-      .username( { optional: true, update: true})
-      .schedule('customAppointmentsSchedule', { allowNull: true, optional: true })
-      .schedule('schedule', { allowNull: true, optional: true })
-      .validateTimeObject('futureBooking', { from: DAY_1, to: DAY_7, step: DAY_1, optional: true, allowNull: true })
-      .validateTimeObject('priorTimeBooking', { from: HOUR_1, to: HOUR_12, step: HOUR_1, optional: true, allowNull: true })
+      .username({ optional: true, update: true })
+      .schedule("customAppointmentsSchedule", {
+        allowNull: true,
+        optional: true,
+      })
+      .schedule("schedule", { allowNull: true, optional: true })
+      .validateTimeObject("futureBooking", {
+        from: DAY_1,
+        to: DAY_7,
+        step: DAY_1,
+        optional: true,
+        allowNull: true,
+      })
+      .validateTimeObject("priorTimeBooking", {
+        from: HOUR_1,
+        to: HOUR_12,
+        step: HOUR_1,
+        optional: true,
+        allowNull: true,
+      })
       .password({ optional: true })
       .result()
-      .then(async values => {
+      .then(async (values) => {
         const role = await strapi.services.accounts.getRole(values.role);
         const errors = {};
         if (role.name === GROUP_NAME_ADMINISTRATOR && !values.email) {
-          errors.email = { msg: 'Accounts in Administator group should have emails', param: 'email' };
+          errors.email = {
+            msg: "Accounts in Administator group should have emails",
+            param: "email",
+          };
         }
 
-        if (await strapi.services.accounts.isEmployeeRole(role.name) && !values.username) {
-          errors.username = { msg: 'Accounts in Employee group should have usernames', param: 'username' };
+        if (
+          (await strapi.services.accounts.isEmployeeRole(role.name)) &&
+          !values.username
+        ) {
+          errors.username = {
+            msg: "Accounts in Employee group should have usernames",
+            param: "username",
+          };
         }
 
         if (Object.keys(errors).length > 0) {
           return ctx.badRequest(null, { errors });
         }
-        const original = await strapi.services.accounts.fetch({ _id: objectId(values.id) });
+        const original = await strapi.services.accounts.fetch({
+          _id: objectId(values.id),
+        });
         values.updatedAt = Date.now();
         if (original.email !== values.email && original.slackId) {
           values.slackId = null;
         }
-        return strapi
-          .services
-          .accounts
+        return strapi.services.accounts
           .update({ id: values.id }, values)
-          .then(async user => {
-            strapi.services.eventemitter.emit('accounts.update', { ...user, role: {...role._doc }, original });
-            return {data: {
-                ..._.pick(user, strapi.services.accounts.USER_FIELDS)
+          .then(async (user) => {
+            strapi.services.eventemitter.emit("accounts.update", {
+              ...user,
+              role: { ...role._doc },
+              original,
+            });
+            return {
+              data: {
+                ..._.pick(user, strapi.services.accounts.USER_FIELDS),
               },
-              ...{ notifications: {
+              ...{
+                notifications: {
                   flash: {
-                    msg: 'Successfully saved', 'type':'success'
-                  }
-                }
-              }};
+                    msg: "Successfully saved",
+                    type: "success",
+                  },
+                },
+              },
+            };
           });
       })
-      .catch(e => {
-        if (e.message) strapi.log.error('accounts.update Error: %s', e.message);
+      .catch((e) => {
+        if (e.message) strapi.log.error("accounts.update Error: %s", e.message);
         if (e instanceof TypeError) return ctx.badRequest(null, e.message);
         return ctx.badRequest(null, e);
       });
@@ -307,17 +400,17 @@ module.exports = {
    * @param ctx Koa object
    * @returns {Promise<void>}
    */
-  remove: async ctx => {
-    return strapi
-      .services
-      .joi
+  remove: async (ctx) => {
+    return strapi.services.joi
       .validate(ctx.params)
-      .objectId('id')
+      .objectId("id")
       .result()
-      .then(async res =>  strapi.services.accounts.delete(res))
-      .then(user => strapi.services.eventemitter.emit('accounts.remove', user))
-      .catch(e => {
-        if (e.message) strapi.log.error('accounts.remove Error: %s', e.message);
+      .then(async (res) => strapi.services.accounts.delete(res))
+      .then((user) =>
+        strapi.services.eventemitter.emit("accounts.remove", user)
+      )
+      .catch((e) => {
+        if (e.message) strapi.log.error("accounts.remove Error: %s", e.message);
         if (e instanceof TypeError) return ctx.badRequest(null, e.message);
         return ctx.badRequest(null, e);
       });
@@ -326,14 +419,26 @@ module.exports = {
    * Gets profile of a currently logged in user
    * @param ctx
    */
-  getProfile: ctx => {
+  getProfile: (ctx) => {
     const user = ctx.state.user;
 
     if (!user) {
-      return ctx.badRequest(null, [{ messages: [{ id: 'No authorization header was found' }] }]);
+      return ctx.badRequest(null, [
+        { messages: [{ id: "No authorization header was found" }] },
+      ]);
     }
 
-    const profile = _.omit(user.toJSON ? user.toJSON() : user, ['blocked','confirmed','description', 'password', 'resetPasswordToken', 'tokens', 'preferredEmployees', 'linkedTokens', 'visits']);
+    const profile = _.omit(user.toJSON ? user.toJSON() : user, [
+      "blocked",
+      "confirmed",
+      "description",
+      "password",
+      "resetPasswordToken",
+      "tokens",
+      "preferredEmployees",
+      "linkedTokens",
+      "visits",
+    ]);
     // Send 200 `ok`
     ctx.send(sanitizedUserEntry(profile));
   },
@@ -343,49 +448,65 @@ module.exports = {
    * @param ctx
    * @returns {Promise<void>}
    */
-  updateProfile: async ctx => {
+  updateProfile: async (ctx) => {
     const user = ctx.state.user;
-    if (!user) return ctx.badRequest(null, [{ messages: [{ id: 'No authorization header was found' }] }]);
+    if (!user)
+      return ctx.badRequest(null, [
+        { messages: [{ id: "No authorization header was found" }] },
+      ]);
     const data = { ...ctx.request.body, ...{ role: user.role._id.toString() } };
     if (data.username === user.username) delete data.username;
-    return strapi
-      .services
-      .joi
+    return strapi.services.joi
       .validate(data)
-      .string('firstName', { label: 'First Name' })
-      .string('lastName', { label: 'Last Name' })
+      .string("firstName", { label: "First Name" })
+      .string("lastName", { label: "Last Name" })
       .role()
-      .username( { optional: true, update: true})
+      .username({ optional: true, update: true })
       .result()
-      .then(async values => {
+      .then(async (values) => {
         delete values.role;
         values.updatedAt = Date.now();
-        return strapi
-          .plugins['users-permissions']
-          .services
-          .user
+        return strapi.plugins["users-permissions"].services.user
           .edit({ id: user.id }, values)
-          .then(async user => {
+          .then(async (user) => {
             if (await strapi.services.accounts.isEmployeeRole(user.role.name)) {
               await strapi.controllers.queue.updateCache(user);
               strapi.io.sockets.emit(
-                'queue.setEmployees',
-                await strapi.controllers.queue.getEmployees(),
+                "queue.setEmployees",
+                await strapi.controllers.queue.getEmployees()
               );
             }
-            return { ...user, ...{ role: user.role.name, }, ...{ notifications: {
+
+            const profile = _.omit(user.toJSON ? user.toJSON() : user, [
+              "blocked",
+              "confirmed",
+              "description",
+              "password",
+              "resetPasswordToken",
+              "tokens",
+              "preferredEmployees",
+              "linkedTokens",
+            ]);
+
+            return {
+              ...sanitizedUserEntry(profile),
+              ...{
+                notifications: {
                   flash: {
-                    msg: 'Successfully saved', 'type':'success'
-                  }
-                }
-              } };
+                    msg: "Successfully saved",
+                    type: "success",
+                  },
+                },
+              },
+            };
           });
-      }).catch(e => {
-        if (e.message) strapi.log.error('accounts.updateProfile Error: %s', e.message);
+      })
+      .catch((e) => {
+        if (e.message)
+          strapi.log.error("accounts.updateProfile Error: %s", e.message);
         if (e instanceof TypeError) return ctx.badRequest(null, e.message);
         return ctx.badRequest(null, e);
       });
-
   },
 
   /**
@@ -393,30 +514,33 @@ module.exports = {
    * @param ctx
    * @returns {Promise<void>}
    */
-  changePassword: async ctx => {
+  changePassword: async (ctx) => {
     const user = ctx.state.user;
-    if (!user) return ctx.badRequest(null, [{ messages: [{ id: 'No authorization header was found' }] }]);
-    return strapi
-      .services
-      .joi
+    if (!user)
+      return ctx.badRequest(null, [
+        { messages: [{ id: "No authorization header was found" }] },
+      ]);
+    return strapi.services.joi
       .validate(ctx.request.body)
       .password()
       .result()
-      .then(async values => {
-        return strapi
-          .plugins['users-permissions']
-          .services
-          .user
+      .then(async (values) => {
+        return strapi.plugins["users-permissions"].services.user
           .edit({ id: user.id }, { password: values.password })
           .then(async () => {
-            return ctx.send({ notifications: { flash: { msg: 'Successfully changed', type: 'success' } } });
+            return ctx.send({
+              notifications: {
+                flash: { msg: "Successfully changed", type: "success" },
+              },
+            });
           });
-      }).catch(e => {
-        if (e.message) strapi.log.error('accounts.changePassword Error: %s', e.message);
+      })
+      .catch((e) => {
+        if (e.message)
+          strapi.log.error("accounts.changePassword Error: %s", e.message);
         if (e instanceof TypeError) return ctx.badRequest(null, e.message);
         return ctx.badRequest(null, e);
       });
-
   },
 
   /**
@@ -425,25 +549,32 @@ module.exports = {
    * @returns {Promise<void>}
    */
   clearAvatar: async (ctx) => {
-    return strapi
-      .services
-      .joi
+    return strapi.services.joi
       .validate(ctx.params)
-      .objectId('id')
+      .objectId("id")
       .result()
-      .then(async values => {
-        const account = await strapi.services.accounts.fetch({ _id: objectId(values.id) });
-        const avatarId = _.get(account, 'avatar._id');
+      .then(async (values) => {
+        const account = await strapi.services.accounts.fetch({
+          _id: objectId(values.id),
+        });
+        const avatarId = _.get(account, "avatar._id");
         if (avatarId) {
           await strapi.services.accounts.deleteAvatar(account);
-          const updatedAccount = await strapi.services.accounts.fetch({ _id: objectId(values.id) });
-          strapi.services.eventemitter.emit('accounts.avatar.clear', updatedAccount, ctx);
+          const updatedAccount = await strapi.services.accounts.fetch({
+            _id: objectId(values.id),
+          });
+          strapi.services.eventemitter.emit(
+            "accounts.avatar.clear",
+            updatedAccount,
+            ctx
+          );
           return ctx.send({}); // Send 200 `ok`
         }
-        return ctx.badRequest(null, 'Bad request');
+        return ctx.badRequest(null, "Bad request");
       })
       .catch((e) => {
-        if (e.message) strapi.log.error('accounts.clearAvatar Error: %s', e.message);
+        if (e.message)
+          strapi.log.error("accounts.clearAvatar Error: %s", e.message);
         if (e instanceof TypeError) return ctx.badRequest(null, e.message);
         return ctx.badRequest(null, e);
       });
@@ -458,10 +589,17 @@ module.exports = {
     try {
       // TODO: Implement validation process !important
       // Retrieve provider configuration.
-      const config = await strapi.services.config.get('upload', { environment: process.env.NODE_ENV }).key('provider');
+      const config = await strapi.services.config
+        .get("upload", { environment: process.env.NODE_ENV })
+        .key("provider");
       // Verify if the file upload is enable.
       if (config.enabled === false) {
-        return ctx.badRequest(null, ctx.request.admin ? [{ messages: [{ id: 'Upload.status.disabled' }] }] : 'File upload is disabled');
+        return ctx.badRequest(
+          null,
+          ctx.request.admin
+            ? [{ messages: [{ id: "Upload.status.disabled" }] }]
+            : "File upload is disabled"
+        );
       }
 
       // Extract optional relational data.
@@ -469,32 +607,55 @@ module.exports = {
       const { files = {} } = ctx.request.files;
 
       if (_.isEmpty(files)) {
-        return ctx.badRequest(null, ctx.request.admin ? [{ messages: [{ id: 'Upload.status.empty' }] }] : 'Files are empty');
+        return ctx.badRequest(
+          null,
+          ctx.request.admin
+            ? [{ messages: [{ id: "Upload.status.empty" }] }]
+            : "Files are empty"
+        );
       }
 
       // Transform stream files to buffer
-      const buffers = await strapi.plugins.upload.services.upload.bufferize(files);
-      const enhancedFiles = buffers.map(file => {
+      const buffers = await strapi.plugins.upload.services.upload.bufferize(
+        files
+      );
+      const enhancedFiles = buffers.map((file) => {
         if (file.size > config.sizeLimit) {
-          return ctx.badRequest(null, ctx.request.admin ? [{ messages: [{ id: 'Upload.status.sizeLimit', values: {file: file.name} }] }] : `${file.name} file is bigger than limit size!`);
+          return ctx.badRequest(
+            null,
+            ctx.request.admin
+              ? [
+                  {
+                    messages: [
+                      {
+                        id: "Upload.status.sizeLimit",
+                        values: { file: file.name },
+                      },
+                    ],
+                  },
+                ]
+              : `${file.name} file is bigger than limit size!`
+          );
         }
 
         // Add details to the file to be able to create the relationships.
         if (refId && ref && field) {
           Object.assign(file, {
-            related: [{
-              refId,
-              ref,
-              source,
-              field
-            }]
+            related: [
+              {
+                refId,
+                ref,
+                source,
+                field,
+              },
+            ],
           });
         }
 
         // Update uploading folder path for the file.
         if (path) {
           Object.assign(file, {
-            path
+            path,
           });
         }
 
@@ -505,64 +666,87 @@ module.exports = {
       if (ctx.status === 400) {
         return;
       }
-      const account = await strapi.services.accounts.fetch({ _id: objectId(refId) });
+      const account = await strapi.services.accounts.fetch({
+        _id: objectId(refId),
+      });
       if (!account) return ctx.badRequest(null);
 
-      const avatarId = _.get(account, 'avatar._id');
+      const avatarId = _.get(account, "avatar._id");
 
       if (avatarId) {
-        await strapi.plugins['upload'].services.upload.remove({ _id: avatarId }, config);
+        await strapi.plugins["upload"].services.upload.remove(
+          { _id: avatarId },
+          config
+        );
       }
 
-      const uploadedFiles = await strapi.plugins.upload.services.upload.upload(enhancedFiles, config);
-      const updatedAccount = await strapi.services.accounts.fetch({ _id: objectId(refId) });
-      strapi.services.eventemitter.emit('accounts.avatar.upload', updatedAccount, ctx);
+      const uploadedFiles = await strapi.plugins.upload.services.upload.upload(
+        enhancedFiles,
+        config
+      );
+      const updatedAccount = await strapi.services.accounts.fetch({
+        _id: objectId(refId),
+      });
+      strapi.services.eventemitter.emit(
+        "accounts.avatar.upload",
+        updatedAccount,
+        ctx
+      );
 
       // Send 200 `ok`
-      ctx.send(uploadedFiles.map((file) => {
-        // If is local server upload, add backend host as prefix
-        if (file.url && file.url[0] === '/') {
-          file.url = strapi.config.url + file.url;
-        }
+      ctx.send(
+        uploadedFiles.map((file) => {
+          // If is local server upload, add backend host as prefix
+          if (file.url && file.url[0] === "/") {
+            file.url = strapi.config.url + file.url;
+          }
 
-        if (_.isArray(file.related)) {
-          file.related = file.related.map(obj => obj.ref || obj);
-        }
+          if (_.isArray(file.related)) {
+            file.related = file.related.map((obj) => obj.ref || obj);
+          }
 
-        return file;
-      }));
-    } catch(e) {
-      if (e.message) strapi.log.error('accounts.uploadAvatar Error: %s', e.message);
+          return file;
+        })
+      );
+    } catch (e) {
+      if (e.message)
+        strapi.log.error("accounts.uploadAvatar Error: %s", e.message);
       if (e instanceof TypeError) return ctx.badRequest(null, e.message);
       return ctx.badRequest(null, e);
     }
   },
 
-  invite: async ctx => {
-    return strapi
-      .services
-      .joi
+  invite: async (ctx) => {
+    return strapi.services.joi
       .validate(ctx.params)
-      .objectId('id')
+      .objectId("id")
       .result()
-      .then(async values => {
-        const account = await strapi.services.accounts.fetch({ _id: objectId(values.id) });
+      .then(async (values) => {
+        const account = await strapi.services.accounts.fetch({
+          _id: objectId(values.id),
+        });
         if (account && account.email) {
           // const previousInvites =  await strapi.services.mq.get('services.email').getJob(`${account.id}:invite`);
           // if (!previousInvites) {
-          strapi.services.eventemitter.emit('accounts.invite', new User(account), ctx);
-          return ctx.send({ notifications: { flash: { msg: 'Successfully sent', type: 'success' } } });
+          strapi.services.eventemitter.emit(
+            "accounts.invite",
+            new User(account),
+            ctx
+          );
+          return ctx.send({
+            notifications: {
+              flash: { msg: "Successfully sent", type: "success" },
+            },
+          });
           // }
           // return ctx.send({ notifications: { flash: { msg: 'Invitation was already sent', type: 'error' } } });
         }
-        return ctx.badRequest(null, 'Bad request');
+        return ctx.badRequest(null, "Bad request");
       })
       .catch((e) => {
-        if (e.message) strapi.log.error('accounts.invite Error: %s', e.message);
+        if (e.message) strapi.log.error("accounts.invite Error: %s", e.message);
         if (e instanceof TypeError) return ctx.badRequest(null, e.message);
         return ctx.badRequest(null, e);
       });
-
   },
-
 };

@@ -102,7 +102,7 @@ class RegistrationForm extends React.Component {
       this.context.focus('registrationFormFirstName');
     };
 
-    const onKeyPress = e => {
+    const onKeyPress = (e) => {
       clearInterval(this.timeoutInterval);
       this.timeoutInterval = this.timeoutModalInterval();
       if (e.key === 'Enter' && firstName && lastName) {
@@ -111,7 +111,12 @@ class RegistrationForm extends React.Component {
       }
     };
     return (
-      <form onSubmit={handleSubmit} onKeyPress={onKeyPress} autoComplete="off">
+      <form
+        id="registrationForm"
+        onSubmit={handleSubmit}
+        onKeyPress={onKeyPress}
+        autoComplete="off"
+      >
         {process.env.BROWSER &&
           this.portalRoot &&
           ReactDOM.createPortal(
@@ -222,6 +227,7 @@ class RegistrationForm extends React.Component {
                 </Col>
                 <Col xs={12} md={6}>
                   <Field
+                    id="registrationFormLastName"
                     autocomplete="off"
                     icon="icon-user"
                     name="lastName"
@@ -233,6 +239,7 @@ class RegistrationForm extends React.Component {
                 </Col>
 
                 <Button
+                  id="submitSelectEmployees"
                   className="px-0 w-100 mt-4 mb-4"
                   color="primary"
                   onClick={() => {
@@ -321,7 +328,7 @@ class RegistrationForm extends React.Component {
                     color="success"
                     style={{ height: '54px', fontSize: '24px' }}
                     className="px-0 w-100 mb-5 mt-5 font-weight-bold"
-                    onClick={async e => {
+                    onClick={async (e) => {
                       e.preventDefault();
                       await onEmployeeClick('Anyone');
                       return handleSubmit();
@@ -352,7 +359,7 @@ class RegistrationForm extends React.Component {
                     </Col>
                   </React.Fragment>
                 )}
-                {listOfEnabledEmployees.filter(el => el.name !== 'Anyone')
+                {listOfEnabledEmployees.filter((el) => el.name !== 'Anyone')
                   .length > 0 && (
                   <React.Fragment>
                     <Row className="col-12 mb-3">
@@ -416,7 +423,7 @@ class RegistrationForm extends React.Component {
                     </Col>
                   </React.Fragment>
                 )}
-                {listOfEnabledEmployees.filter(el => el.name !== 'Anyone')
+                {listOfEnabledEmployees.filter((el) => el.name !== 'Anyone')
                   .length === 0 && (
                   <Col xs="12" md="12" className="pl-0 pr-0 mb-4 mt-4">
                     <Button
@@ -486,7 +493,7 @@ let registrationForm = reduxForm({
   },
 })(RegistrationForm);
 
-registrationForm = connect(state => {
+registrationForm = connect((state) => {
   const { firstName, lastName, email } = selector(
     state,
     'firstName',
