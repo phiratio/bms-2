@@ -13,13 +13,13 @@ module.exports = {
   parser: 'babel-eslint',
 
   extends: [
-    'plugin:flowtype/recommended',
+    // 'plugin:flowtype/recommended',
     'plugin:css-modules/recommended',
-    'prettier/flowtype',
+    // 'prettier/flowtype',
     'prettier/react',
   ],
 
-  plugins: ['flowtype', 'css-modules'],
+  plugins: ['css-modules'],
 
   globals: {
     __DEV__: true,
@@ -32,7 +32,7 @@ module.exports = {
   rules: {
     // Forbid the use of extraneous packages
     // https://github.com/benmosher/eslint-plugin-import/blob/master/docs/rules/no-extraneous-dependencies.md
-    'import/no-extraneous-dependencies': ['error', { packageDir: '.' }],
+    // 'import/no-extraneous-dependencies': ['error', { packageDir: '.' }],
 
     // Recommend not to leave any console.log in your code
     // Use console.error, console.warn and console.info instead
@@ -74,18 +74,18 @@ module.exports = {
 
     // Ensure <a> tags are valid
     // https://github.com/evcohen/eslint-plugin-jsx-a11y/blob/master/docs/rules/anchor-is-valid.md
-    'jsx-a11y/anchor-is-valid': [
-      'error',
-      {
-        components: ['Link'],
-        specialLink: ['to'],
-        aspects: ['noHref', 'invalidHref', 'preferButton'],
-      },
-    ],
+    // 'jsx-a11y/anchor-is-valid': [
+    //   'error',
+    //   {
+    //     components: ['Link'],
+    //     specialLink: ['to'],
+    //     aspects: ['noHref', 'invalidHref', 'preferButton'],
+    //   },
+    // ],
 
     // Allow .js files to use JSX syntax
     // https://github.com/yannickcr/eslint-plugin-react/blob/master/docs/rules/jsx-filename-extension.md
-    'react/jsx-filename-extension': ['error', { extensions: ['.js', '.jsx'] }],
+    // 'react/jsx-filename-extension': ['error', { extensions: ['.js', '.jsx'] }],
 
     // Functional and class components are equivalent from React’s point of view
     // https://github.com/yannickcr/eslint-plugin-react/blob/master/docs/rules/prefer-stateless-function.md

@@ -46,16 +46,12 @@ module.exports = {
   // coverageReporters: [], // [array<string>]
   // coverageThreshold: {}, // [object]
 
-  globals: {
-    __DEV__: true,
-  },
-
   // https://facebook.github.io/jest/docs/en/configuration.html#mapcoverage-boolean
   // mapCoverage: false, // [boolean]
 
   // The default extensions Jest will look for.
   // https://facebook.github.io/jest/docs/en/configuration.html#modulefileextensions-array-string
-  moduleFileExtensions: ['js', 'json', 'jsx', 'node'],
+  moduleFileExtensions: ['js', 'json', 'jsx', 'node', 'ts'],
 
   // moduleDirectories: // [array<string>]
 
@@ -64,7 +60,17 @@ module.exports = {
   moduleNameMapper: {
     '\\.(css|less|styl|scss|sass|sss)$': 'identity-obj-proxy',
   },
-
+  testMatch: [
+    '**/__tests__/*.(ts|tsx)',
+    '**/*.spec.(ts|tsx)',
+    '**/*.test.(ts|tsx)',
+  ],
+  globals: {
+    __DEV__: true,
+    'ts-jest': {
+      tsConfig: 'tsconfig.jest.json',
+    },
+  },
   // modulePathIgnorePatterns: // [array<string>]
   // modulePaths: // [array<string>]
   // notify: false, // [boolean]
@@ -90,6 +96,7 @@ module.exports = {
   // timers: // [string]
 
   transform: {
+    '^.+\\.(ts|tsx)$': 'babel-jest',
     '\\.(js|jsx)$': '<rootDir>/node_modules/babel-jest',
     '\\.(gql|graphql)$': '<rootDir>/node_modules/jest-transform-graphql',
     '^(?!.*\\.(js|jsx|json|css|less|styl|scss|sass|sss)$)':
