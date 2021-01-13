@@ -27,3 +27,4 @@ describe("server initialization", () => {
 });
 
 require("./user");
+require("./registration");

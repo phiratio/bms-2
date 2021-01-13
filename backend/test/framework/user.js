@@ -95,6 +95,12 @@ const updateUserProfile = async (jwt, data) => {
   };
 };
 
+/**
+ * Sends request to change current user password
+ * @param jwt
+ * @param password
+ * @returns {Promise<{body: *, notifications: *, statusCode: *}>}
+ */
 const changeUserPassword = async (jwt, password) => {
   const res = await request(strapi.server)
     .put("/accounts/profile/changePassword")

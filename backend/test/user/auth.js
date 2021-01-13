@@ -9,21 +9,21 @@ const { deleteUser, getDefaultRole, createUser } = require("../framework/user");
 describe("authentication flow", () => {
   let defaultRole;
   let user;
-  const mockUser = require("../mocks/user/defaultUser");
+  const { localUser } = require("../mocks/user");
 
   beforeAll(async () => {
     defaultRole = await getDefaultRole();
-    mockUser.role = defaultRole.id;
-    await deleteUser({ email: mockUser.email });
+    localUser.role = defaultRole.id;
+    await deleteUser({ email: localUser.email });
   });
 
   afterAll(async () => {
-    await deleteUser({ email: mockUser.email });
+    await deleteUser({ email: localUser.email });
   });
 
   it("should login user and return jwt token", async (done) => {
-    user = await createUser(mockUser);
-    const res = await authLocal(mockUser.email, mockUser.password);
+    user = await createUser(localUser);
+    const res = await authLocal(localUser.email, localUser.password);
 
     expect(res.statusCode).toEqual(200);
     expect(res.body).toEqual({
@@ -49,7 +49,7 @@ describe("authentication flow", () => {
   });
 
   it("should return user's data for authenticated user", async (done) => {
-    const user = await createUser(mockUser);
+    const user = await createUser(localUser);
     const jwt = await issueJwt(user.id);
     const currentUser = await getCurrentUserCredentials(jwt);
 
@@ -63,7 +63,7 @@ describe("authentication flow", () => {
   });
 
   it("should return `401 Unauthorized` when requesting user credentials without jwt", async (done) => {
-    await createUser(mockUser);
+    await createUser(localUser);
     const currentUser = await getCurrentUserCredentials();
 
     expect(currentUser.statusCode).toBe(401);

@@ -12,26 +12,26 @@ describe("user profile", () => {
   let userRole;
   let jwt;
   let user;
-  const mockUser = require("../mocks/user/defaultUser");
+  const { localUser } = require("../mocks/user");
 
   beforeAll(async () => {
-    await deleteUser({ email: mockUser.email });
+    await deleteUser({ email: localUser.email });
     userRole = await getRoleByName("Administrator");
-    mockUser.role = userRole.id;
-    user = await createUser(mockUser);
+    localUser.role = userRole.id;
+    user = await createUser(localUser);
     jwt = await issueJwt(user.id);
   });
 
   afterAll(async () => {
-    await deleteUser({ email: mockUser.email });
+    await deleteUser({ email: localUser.email });
   });
 
   it("should return user profile", async (done) => {
     const userProfile = await getUserProfile(jwt);
     expect(userProfile.statusCode).toBe(200);
-    expect(userProfile.body.email).toBe(mockUser.email);
-    expect(userProfile.body.username).toBe(mockUser.username);
-    expect(userProfile.body.role.id).toBe(mockUser.role);
+    expect(userProfile.body.email).toBe(localUser.email);
+    expect(userProfile.body.username).toBe(localUser.username);
+    expect(userProfile.body.role.id).toBe(localUser.role);
     expect(userProfile.body.password).toBeUndefined();
     done();
   });
@@ -66,7 +66,7 @@ describe("user profile", () => {
     const updatedProfile = await updateUserProfile(jwt, updatedProfileData);
     expect(updatedProfile.statusCode).toBe(200);
     expect(updatedProfile.body.email).not.toBe(updatedProfileData.email);
-    expect(updatedProfile.body.email).toBe(mockUser.email);
+    expect(updatedProfile.body.email).toBe(localUser.email);
     expect(updatedProfile.body.role.id).not.toBe(updatedProfileData.role);
     expect(updatedProfile.body.mobilePhone).not.toBe(
       updatedProfileData.mobilePhone
