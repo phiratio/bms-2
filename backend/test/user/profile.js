@@ -1,5 +1,5 @@
+const { deleteUser } = require("../framework/user");
 const {
-  deleteUser,
   getRoleByName,
   createUser,
   getUserProfile,

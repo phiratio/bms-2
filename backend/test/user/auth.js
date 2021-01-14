@@ -4,7 +4,7 @@ const {
   issueJwt,
   authLocal,
 } = require("../framework/auth");
-const { deleteUser, getDefaultRole, createUser } = require("../framework/user");
+const { getDefaultRole, createUser, deleteUser } = require("../framework/user");
 
 describe("authentication flow", () => {
   let defaultRole;
@@ -63,9 +63,7 @@ describe("authentication flow", () => {
   });
 
   it("should return `401 Unauthorized` when requesting user credentials without jwt", async (done) => {
-    await createUser(localUser);
     const currentUser = await getCurrentUserCredentials();
-
     expect(currentUser.statusCode).toBe(401);
     done();
   });
