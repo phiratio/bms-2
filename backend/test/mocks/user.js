@@ -1,5 +1,5 @@
 /**
- * Mock local backend user
+ * Mock local user
  */
 const localUser = {
   username: "tester",
@@ -11,18 +11,14 @@ const localUser = {
 };
 
 /**
- * WaitingList registration user
+ * Mock local admin
  */
-const registrationUser = {
-  username: "testerReg",
-  email: "testerReg@test.com",
-  provider: "local",
-  password: "A1234abc",
-  confirmed: true,
-  blocked: false,
+const localAdminCredentials = {
+  email: "admin@demo.org",
+  password: "demodemo",
 };
 
 module.exports = {
   localUser,
-  registrationUser,
+  localAdminCredentials,
 };

@@ -25,7 +25,7 @@ module.exports = {
   //TODO: Create `policy` to validate if user object is presented in state
 
   ownLists: async (ctx) => {
-    const user = ctx.state.user;
+    const { user } = ctx.state;
     if (!user) {
       return ctx.badRequest(null, [
         { messages: [{ id: "No authorization header was found" }] },
@@ -76,7 +76,7 @@ module.exports = {
   },
 
   ownUpdate: async (ctx) => {
-    const user = ctx.state.user;
+    const { user } = ctx.state;
     if (!user) {
       return ctx.badRequest(null, [
         { messages: [{ id: "No authorization header was found" }] },
@@ -111,7 +111,7 @@ module.exports = {
   },
 
   ownCreate: async (ctx) => {
-    const user = ctx.state.user;
+    const { user } = ctx.state;
     if (!user) {
       return ctx.badRequest(null, [
         { messages: [{ id: "No authorization header was found" }] },
@@ -131,7 +131,7 @@ module.exports = {
   },
 
   ownFindOne: async (ctx) => {
-    const user = ctx.state.user;
+    const { user } = ctx.state;
     if (!user) {
       return ctx.badRequest(null, [
         { messages: [{ id: "No authorization header was found" }] },
@@ -163,7 +163,7 @@ module.exports = {
   },
 
   ownToggleProperty: async (ctx) => {
-    const user = ctx.state.user;
+    const { user } = ctx.state;
     if (!user) {
       return ctx.badRequest(null, [
         { messages: [{ id: "No authorization header was found" }] },
@@ -709,7 +709,7 @@ module.exports = {
    */
 
   register: async (ctx) => {
-    const body = ctx.request.body;
+    const { body } = ctx.request;
     return strapi.services.joi
       .validate(body)
       .string("firstName", { label: "First Name", startCase: true })
@@ -835,7 +835,7 @@ module.exports = {
               data,
               ctx
             );
-            return { message: "success" };
+            return { id: WaitingListRecord.id, message: "success" };
           });
       })
       .catch((e) =>

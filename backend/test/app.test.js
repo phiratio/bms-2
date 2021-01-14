@@ -1,8 +1,12 @@
+const { createUser } = require("./framework/user");
+const { getRoleByName } = require("../api/accounts/services/Accounts");
+const { deleteUser } = require("./framework/user");
 const { setup, teardown, getRootPath } = require("./framework");
 
 jest.setTimeout(30000);
 
 describe("server initialization", () => {
+  const { localUser } = require("./mocks/user");
   /** this code is called once before any test is called */
   beforeAll(async (done) => {
     await setup();
@@ -11,7 +15,7 @@ describe("server initialization", () => {
 
   /** this code is called once before all the tested are finished */
   afterAll(async (done) => {
-    teardown();
+    await teardown();
     done();
   });
 
@@ -24,7 +28,7 @@ describe("server initialization", () => {
     expect(rootRequest.statusCode).toBe(200);
     expect(rootRequest.body).toEqual({});
   });
+  // require("./user");
+  // require("./registration");
+  require("./waitinglists");
 });
-
-require("./user");
-require("./registration");

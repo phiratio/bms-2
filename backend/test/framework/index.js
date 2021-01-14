@@ -31,7 +31,7 @@ const getRootPath = async () => {
   };
 };
 
-const teardown = () => {};
+const teardown = async () => {};
 
 module.exports = {
   setup,

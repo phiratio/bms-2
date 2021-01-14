@@ -38,8 +38,8 @@ const getCurrentUserCredentials = async (jwt) => {
  * @returns {Promise<*>}
  */
 const getJwt = async (identifier, password) => {
-  const authLocal = await authLocal(identifier, password);
-  return authLocal.jwt;
+  const res = await authLocal(identifier, password);
+  return res.body.jwt;
 };
 
 /**

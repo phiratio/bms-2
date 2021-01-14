@@ -23,6 +23,27 @@ const createUser = async (mockUserData) => {
 };
 
 /**
+ * Creates a user based on params
+ * @returns {Promise<*>}
+ * @param email
+ */
+const getUserByEmail = async (email) => {
+  const user = await strapi.plugins["users-permissions"].services.user.fetch({
+    email,
+  });
+
+  return {
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    role: {
+      id: user.role.id,
+      name: user.role.name,
+    },
+  };
+};
+
+/**
  * Deletes user based on provided params
  * @param userData
  * @returns {Promise<*>}
@@ -117,6 +138,7 @@ const changeUserPassword = async (jwt, password) => {
 module.exports = {
   createUser,
   deleteUser,
+  getUserByEmail,
   getDefaultRole,
   getRoleByName,
   getUserProfile,
