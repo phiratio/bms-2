@@ -1,7 +1,135 @@
 const request = require("supertest");
+/**
+ * Sends request to list user accounts
+ * @param jwt
+ * @param accountId
+ * @returns {Promise<{body: *, statusCode: *}>}
+ */
+const listAccounts = async (jwt) => {
+  const res = await request(strapi.server)
+    .get(`/accounts/`)
+    .set("Authorization", `Bearer ${jwt}`);
+
+  return {
+    statusCode: res.statusCode,
+    body: res.body,
+  };
+};
 
 /**
- * Creates a user based on params
+ * Performs search for accounts
+ * @param jwt
+ * @param query
+ * @returns {Promise<{body: *, statusCode: *}>}
+ */
+const searchAccounts = async (jwt, query) => {
+  const res = await request(strapi.server)
+    .get(`/accounts/?search=${query}`)
+    .set("Authorization", `Bearer ${jwt}`);
+
+  return {
+    statusCode: res.statusCode,
+    body: res.body,
+  };
+};
+
+/**
+ * Sends request to meta data for account creation
+ * @param jwt
+ * @returns {Promise<{body: *, statusCode: *}>}
+ */
+const accountsCreateMeta = async (jwt) => {
+  const res = await request(strapi.server)
+    .get(`/accounts/meta`)
+    .set("Authorization", `Bearer ${jwt}`);
+
+  return {
+    statusCode: res.statusCode,
+    body: res.body,
+  };
+};
+
+/**
+ * Sends request to create user account
+ * @param jwt
+ * @param accountData
+ * @returns {Promise<{body: *, statusCode: *}>}
+ */
+const createAccount = async (jwt, accountData) => {
+  const res = await request(strapi.server)
+    .post(`/accounts/`)
+    .send(accountData)
+    .set("Authorization", `Bearer ${jwt}`);
+
+  return {
+    statusCode: res.statusCode,
+    body: res.body,
+  };
+};
+
+/**
+ * Sends request to get user account
+ * @param jwt
+ * @param accountId
+ * @returns {Promise<{body: *, statusCode: *}>}
+ */
+const getAccount = async (jwt, accountId) => {
+  const res = await request(strapi.server)
+    .get(`/accounts/${accountId}`)
+    .set("Authorization", `Bearer ${jwt}`);
+
+  return {
+    statusCode: res.statusCode,
+    body: res.body,
+  };
+};
+
+/**
+ * Sends request to update user account
+ * @param jwt
+ * @param accountId
+ * @param accountData
+ * @returns {Promise<{body: *, statusCode: *}>}
+ */
+const updateAccount = async (jwt, accountId, accountData) => {
+  const res = await request(strapi.server)
+    .put(`/accounts/${accountId}`)
+    .send(accountData)
+    .set("Authorization", `Bearer ${jwt}`);
+
+  return {
+    statusCode: res.statusCode,
+    body: res.body,
+  };
+};
+
+/**
+ * Retrieves role id by name
+ * @param jwt
+ * @param roleName
+ * @returns {Promise<string>}
+ */
+const getRoleIdByName = async (jwt, roleName) => {
+  const {
+    body: { roles },
+  } = await accountsCreateMeta(jwt);
+  let clientRoleId = "";
+
+  roles.forEach((role) => {
+    if (role.name === roleName) {
+      clientRoleId = role.id;
+    }
+  });
+
+  if (clientRoleId === "") {
+    throw new Error(`Unable to get ${roleName} role from meta data`);
+  }
+
+  return clientRoleId;
+};
+
+/**
+ * Creates a user based on params directly in database
  * @param mockUserData
  * @returns {Promise<*>}
  */
@@ -136,6 +264,13 @@ const changeUserPassword = async (jwt, password) => {
 };
 
 module.exports = {
+  listAccounts,
+  searchAccounts,
+  accountsCreateMeta,
+  createAccount,
+  getAccount,
+  updateAccount,
+  getRoleIdByName,
   createUser,
   deleteUser,
   getUserByEmail,

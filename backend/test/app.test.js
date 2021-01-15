@@ -28,7 +28,7 @@ describe("server initialization", () => {
     expect(rootRequest.statusCode).toBe(200);
     expect(rootRequest.body).toEqual({});
   });
-  // require("./user");
-  // require("./registration");
+  require("./user");
+  require("./registration");
   require("./waitinglists");
 });
