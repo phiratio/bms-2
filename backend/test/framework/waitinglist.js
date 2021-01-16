@@ -71,7 +71,7 @@ const createWaitingList = async (jwt, data) => {
  * Toggles waiting list record from table of
  * recent record to checked and vise versa
  * @param jwt
- * @param data
+ * @param id
  * @returns {Promise<{body: *, statusCode: *}>}
  */
 const toggleCheckWaitingListRecord = async (jwt, id) => {
